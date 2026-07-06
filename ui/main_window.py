@@ -13,9 +13,6 @@ from invoice import get_dashboard_data
 from database import backup_database, close
 from ui.customer_window import CustomerWindow
 from ui.invoice_window import InvoiceWindow
-from ui.vehicle_window import VehicleWindow
-from ui.driver_window import DriverWindow
-from ui.transporter_window import TransporterWindow
 from ui.delivery_challan_window import DeliveryChallanWindow
 from ui.receipt_window import ReceiptWindow
 from ui.reports_window import ReportsWindow
@@ -129,15 +126,12 @@ class MainWindow(QMainWindow):
             ("📊  Dashboard", 0),
             ("👤  Customers", 1),
             ("📦  Products", 2),
-            ("🚛  Vehicles", 7),
-            ("🧑‍✈️  Drivers", 8),
-            ("📦  Transporters", 9),
-            ("🚚  Delivery Challans", 10),
-            ("🧾  Receipts", 11),
             ("🧾  New Invoice", 3),
             ("📋  Invoice List", 4),
             ("📊  Reports", 5),
             ("⚙️  Settings", 6),
+            ("🚚  Delivery Challans", 7),
+            ("🧾  Receipts", 8),
         ]
         self._nav_group = []
         for text, idx in nav_items:
@@ -198,20 +192,11 @@ class MainWindow(QMainWindow):
         self.settings_widget = self._build_settings_page()
         self.stack.addWidget(self.settings_widget)          # 6
 
-        self.vehicle_window = VehicleWindow()
-        self.stack.addWidget(self.vehicle_window)           # 7
-
-        self.driver_window = DriverWindow()
-        self.stack.addWidget(self.driver_window)            # 8
-
-        self.transporter_window = TransporterWindow()
-        self.stack.addWidget(self.transporter_window)       # 9
-
         self.delivery_challan_window = DeliveryChallanWindow()
-        self.stack.addWidget(self.delivery_challan_window)  # 10
+        self.stack.addWidget(self.delivery_challan_window)  # 7
 
         self.receipt_window = ReceiptWindow()
-        self.stack.addWidget(self.receipt_window)           # 11
+        self.stack.addWidget(self.receipt_window)           # 8
 
         content_layout.addWidget(self.stack)
         main_layout.addWidget(content_frame, 1)
@@ -235,9 +220,9 @@ class MainWindow(QMainWindow):
             self.invoice_list_window.refresh_list()
         elif btn.page_index == 5:
             self.reports_window.refresh()
-        elif btn.page_index == 10:
+        elif btn.page_index == 7:
             self.delivery_challan_window.refresh_list()
-        elif btn.page_index == 11:
+        elif btn.page_index == 8:
             self.receipt_window.refresh_list()
 
     # ── Dashboard ────────────────────────────────────────────────

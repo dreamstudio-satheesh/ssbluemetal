@@ -53,3 +53,41 @@ def get_all_customers() -> list[dict]:
     conn = get_connection()
     rows = conn.execute("SELECT id, name, mobile FROM customer ORDER BY name").fetchall()
     return [dict(r) for r in rows]
+
+
+# ── Customer Vehicles ──────────────────────────────────────────
+
+def get_customer_vehicles(customer_id: int) -> list[dict]:
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT * FROM customer_vehicle WHERE customer_id=? ORDER BY vehicle_no",
+        (customer_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_customer_vehicle(customer_id: int, vehicle_no: str,
+                         vehicle_type: str = "Tipper", capacity: str = "") -> int:
+    conn = get_connection()
+    cur = conn.execute(
+        "INSERT INTO customer_vehicle (customer_id, vehicle_no, vehicle_type, capacity) VALUES (?, ?, ?, ?)",
+        (customer_id, vehicle_no.strip(), vehicle_type, capacity.strip()),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def update_customer_vehicle(vehicle_id: int, vehicle_no: str,
+                            vehicle_type: str = "Tipper", capacity: str = ""):
+    conn = get_connection()
+    conn.execute(
+        "UPDATE customer_vehicle SET vehicle_no=?, vehicle_type=?, capacity=? WHERE id=?",
+        (vehicle_no.strip(), vehicle_type, capacity.strip(), vehicle_id),
+    )
+    conn.commit()
+
+
+def delete_customer_vehicle(vehicle_id: int):
+    conn = get_connection()
+    conn.execute("DELETE FROM customer_vehicle WHERE id=?", (vehicle_id,))
+    conn.commit()

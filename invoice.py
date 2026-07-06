@@ -10,16 +10,17 @@ def create_invoice(
     customer_mobile: str,
     customer_gstin: str,
     invoice_date: str,
-    gst_type: str,
     subtotal: float,
     gst_rate: float,
     cgst_amount: float,
     sgst_amount: float,
-    igst_amount: float,
     round_off: float,
     grand_total: float,
     amount_in_words: str,
     notes: str = "",
+    vehicle_id: int | None = None,
+    vehicle_no: str = "",
+    driver_name: str = "",
     items: list[dict] | None = None,
 ) -> int:
     conn = get_connection()
@@ -27,13 +28,14 @@ def create_invoice(
         """INSERT INTO invoice (invoice_no, customer_id, customer_name, customer_mobile,
            customer_gstin, invoice_date, gst_type, subtotal, gst_rate,
            cgst_amount, sgst_amount, igst_amount, round_off, grand_total,
-           amount_in_words, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           amount_in_words, notes, vehicle_id, vehicle_no, driver_name)
+           VALUES (?, ?, ?, ?, ?, ?, 'intra', ?, ?,
+           ?, ?, 0, ?, ?, ?, ?, ?, ?)""",
         (
             invoice_no, customer_id, customer_name, customer_mobile,
-            customer_gstin, invoice_date, gst_type, subtotal, gst_rate,
-            cgst_amount, sgst_amount, igst_amount, round_off, grand_total,
-            amount_in_words, notes,
+            customer_gstin, invoice_date, subtotal, gst_rate,
+            cgst_amount, sgst_amount, round_off, grand_total,
+            amount_in_words, notes, vehicle_id, vehicle_no, driver_name,
         ),
     )
     invoice_id = cur.lastrowid

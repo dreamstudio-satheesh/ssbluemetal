@@ -290,14 +290,15 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     # ═══════════════════════════════════════════════════════════════
     #  3. TWO-COLUMN INFO: Invoice details (left) + Customer (right)
     # ═══════════════════════════════════════════════════════════════
-    gst_type_display = "Intra-State (CGST+SGST)" if inv["gst_type"] == "intra" else "Inter-State (IGST)"
-
     left_rows = [
         _info_pair("Invoice No", f"<b>{inv['invoice_no']}</b>"),
         _info_pair("Date", f"<b>{inv['invoice_date']}</b>"),
-        _info_pair("GST Type", f"<b>{gst_type_display}</b>"),
         _info_pair("Place of Supply", "<b>Tamil Nadu</b>"),
     ]
+    if inv.get("vehicle_no"):
+        left_rows.append(_info_pair("Vehicle No", f"<b>{inv['vehicle_no']}</b>"))
+    if inv.get("driver_name"):
+        left_rows.append(_info_pair("Driver", inv["driver_name"]))
     left_tbl = Table(left_rows, colWidths=[32*mm, 56*mm])
     left_tbl.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -372,21 +373,17 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     # Totals section
     data.append(["", "", "", "", "", "", ""])  # spacer
     gst_rate = inv.get("gst_rate", 0)
-    gst_type = inv.get("gst_type", "intra")
     data.append(["", "", "", "", "", "Subtotal", f"{inv['subtotal']:.2f}"])
     if gst_rate > 0:
-        if gst_type == "intra":
-            hr = gst_rate / 2
-            data.append(["", "", "", "", "", f"CGST @ {hr:.2f}%", f"{inv['cgst_amount']:.2f}"])
-            data.append(["", "", "", "", "", f"SGST @ {hr:.2f}%", f"{inv['sgst_amount']:.2f}"])
-        else:
-            data.append(["", "", "", "", "", f"IGST @ {gst_rate:.2f}%", f"{inv['igst_amount']:.2f}"])
+        hr = gst_rate / 2
+        data.append(["", "", "", "", "", f"CGST @ {hr:.2f}%", f"{inv['cgst_amount']:.2f}"])
+        data.append(["", "", "", "", "", f"SGST @ {hr:.2f}%", f"{inv['sgst_amount']:.2f}"])
     ro = inv.get("round_off", 0)
     if ro != 0:
         data.append(["", "", "", "", "", "Round Off", f"{ro:+.2f}"])
     data.append(["", "", "", "", "", "Grand Total", f"{inv['grand_total']:.2f}"])
 
-    total_n = 2 + (1 if gst_type == "inter" else 2 if gst_rate > 0 else 0) + (1 if ro != 0 else 0)
+    total_n = 2 + (2 if gst_rate > 0 else 0) + (1 if ro != 0 else 0)
     total_start = -total_n
 
     tbl = Table(data, colWidths=cw, repeatRows=1)

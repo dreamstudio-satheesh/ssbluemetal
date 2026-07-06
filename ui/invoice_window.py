@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QEvent
 from PySide6.QtGui import QFont, QDoubleValidator
 
-from customer import search_customers, get_all_customers
+from customer import search_customers, get_all_customers, get_customer_vehicles
 from product import get_all_products
 from database import get_next_invoice_no
 from invoice import (
@@ -65,13 +65,6 @@ class InvoiceWindow(QWidget):
         self.date_edit.setStyleSheet("padding: 4px 8px;")
         meta_grid.addWidget(self.date_edit, 0, 3)
 
-        meta_grid.addWidget(QLabel("GST Type:"), 0, 4)
-        self.gst_type_combo = QComboBox()
-        self.gst_type_combo.addItems(["intra (CGST+SGST)", "inter (IGST)"])
-        self.gst_type_combo.setFixedWidth(190)
-        self.gst_type_combo.setStyleSheet("padding: 4px 8px;")
-        meta_grid.addWidget(self.gst_type_combo, 0, 5)
-
         layout.addLayout(meta_grid)
         layout.addSpacing(8)
 
@@ -103,6 +96,21 @@ class InvoiceWindow(QWidget):
         cust_layout.addWidget(self.cust_name_label, 2, 0)
         cust_layout.addWidget(self.cust_mobile_label, 2, 1)
         cust_layout.addWidget(self.cust_gstin_label, 3, 0)
+
+        # Vehicle selection
+        cust_layout.addWidget(QLabel("Vehicle:"), 4, 0)
+        self.vehicle_combo = QComboBox()
+        self.vehicle_combo.setMinimumWidth(250)
+        self.vehicle_combo.setStyleSheet("padding: 4px 8px;")
+        self.vehicle_combo.addItem("— Select Vehicle —", None)
+        cust_layout.addWidget(self.vehicle_combo, 4, 1)
+
+        # Driver name
+        cust_layout.addWidget(QLabel("Driver:"), 5, 0)
+        self.driver_name = QLineEdit()
+        self.driver_name.setPlaceholderText("Driver name")
+        self.driver_name.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        cust_layout.addWidget(self.driver_name, 5, 1)
 
         layout.addWidget(cust_group)
         layout.addSpacing(8)
@@ -197,11 +205,6 @@ class InvoiceWindow(QWidget):
         self.sgst_label.setFont(QFont("Segoe UI", 9))
         self.sgst_label.setStyleSheet("color: #757575;")
         totals_layout.addRow("  SGST:", self.sgst_label)
-
-        self.igst_label = QLabel("₹ 0.00")
-        self.igst_label.setFont(QFont("Segoe UI", 9))
-        self.igst_label.setStyleSheet("color: #757575;")
-        totals_layout.addRow("  IGST:", self.igst_label)
 
         # Separator
         sep_line = QFrame()
@@ -316,10 +319,23 @@ class InvoiceWindow(QWidget):
                 self.cust_name_label.setText(f"<b>{c['name']}</b>")
                 self.cust_mobile_label.setText(f"📞 {c.get('mobile', '')}")
                 self.cust_gstin_label.setText(f"GST: {c.get('gstin', 'N/A')}")
+                self._load_customer_vehicles(cid)
                 return
         self.cust_name_label.setText("<i>No customer selected</i>")
         self.cust_mobile_label.setText("")
         self.cust_gstin_label.setText("")
+        self.vehicle_combo.clear()
+        self.vehicle_combo.addItem("— Select Vehicle —", None)
+
+    def _load_customer_vehicles(self, customer_id: int):
+        self.vehicle_combo.blockSignals(True)
+        self.vehicle_combo.clear()
+        self.vehicle_combo.addItem("— Select Vehicle —", None)
+        vehicles = get_customer_vehicles(customer_id)
+        for v in vehicles:
+            label = f"{v['vehicle_no']}  ({v.get('vehicle_type', '')})"
+            self.vehicle_combo.addItem(label, v["id"])
+        self.vehicle_combo.blockSignals(False)
 
     def _generate_invoice_no(self):
         company = get_company()
@@ -373,16 +389,10 @@ class InvoiceWindow(QWidget):
         gst_rate = float(gst_text.replace("GST ", "").replace("%", ""))
         gst_amount = round(subtotal * gst_rate / 100, 2)
 
-        is_intra = self.gst_type_combo.currentIndex() == 0
-        if is_intra:
-            half = round(gst_amount / 2, 2)
-            cgst = half
-            sgst = gst_amount - half
-            igst = 0.0
-        else:
-            cgst = 0.0
-            sgst = 0.0
-            igst = gst_amount
+        # Always CGST + SGST (Tamil Nadu - intra-state only)
+        half = round(gst_amount / 2, 2)
+        cgst = half
+        sgst = gst_amount - half
 
         grand = subtotal + gst_amount
 
@@ -390,14 +400,12 @@ class InvoiceWindow(QWidget):
         self._gst_rate = gst_rate
         self._cgst = cgst
         self._sgst = sgst
-        self._igst = igst
         self._round_off = 0.0
         self._grand = grand
 
         self.subtotal_label.setText(f"₹ {subtotal:,.2f}")
         self.cgst_label.setText(f"₹ {cgst:,.2f}")
         self.sgst_label.setText(f"₹ {sgst:,.2f}")
-        self.igst_label.setText(f"₹ {igst:,.2f}")
         self.grand_total_label.setText(f"₹ {grand:,.2f}")
 
     def _do_round_off(self):
@@ -471,6 +479,14 @@ class InvoiceWindow(QWidget):
                 "amount": float(self.items_table.item(row, 5).text()),
             })
 
+        # Vehicle + driver
+        veh_idx = self.vehicle_combo.currentIndex()
+        veh_id = self.vehicle_combo.itemData(veh_idx) if veh_idx >= 0 else None
+        veh_text = self.vehicle_combo.currentText() if veh_idx > 0 else ""
+        # Extract just the vehicle no from combo text (remove type suffix)
+        vehicle_no = veh_text.split("  (")[0] if veh_text else ""
+        driver = self.driver_name.text().strip()
+
         inv_id = create_invoice(
             invoice_no=self.inv_no,
             customer_id=c["id"],
@@ -478,16 +494,17 @@ class InvoiceWindow(QWidget):
             customer_mobile=c.get("mobile", ""),
             customer_gstin=c.get("gstin", ""),
             invoice_date=self.date_edit.date().toString("yyyy-MM-dd"),
-            gst_type="intra" if self.gst_type_combo.currentIndex() == 0 else "inter",
             subtotal=self._subtotal,
             gst_rate=self._gst_rate,
             cgst_amount=self._cgst,
             sgst_amount=self._sgst,
-            igst_amount=self._igst,
             round_off=self._round_off,
             grand_total=self._grand,
             amount_in_words=self._amount_in_words(self._grand),
             notes="",
+            vehicle_id=veh_id,
+            vehicle_no=vehicle_no,
+            driver_name=driver,
             items=items,
         )
 
@@ -512,6 +529,9 @@ class InvoiceWindow(QWidget):
         self.print_btn.setEnabled(False)
         self._generate_invoice_no()
         self._recalc_totals()
+        self.vehicle_combo.clear()
+        self.vehicle_combo.addItem("— Select Vehicle —", None)
+        self.driver_name.clear()
         if hasattr(self, '_saved_invoice_id'):
             del self._saved_invoice_id
 

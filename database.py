@@ -4,6 +4,7 @@ import sqlite3
 import shutil
 import os
 from datetime import datetime
+from typing import Any
 
 DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db")
 DB_PATH = os.path.join(DB_DIR, "billing.db")
@@ -61,6 +62,14 @@ def init_db():
             gstin TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS customer_vehicle (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL REFERENCES customer(id) ON DELETE CASCADE,
+            vehicle_no TEXT NOT NULL,
+            vehicle_type TEXT DEFAULT 'Tipper',
+            capacity TEXT DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS product (
@@ -218,6 +227,17 @@ def init_db():
         VALUES (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Administrator', 'admin');
     """)
 
+    conn.commit()
+
+    # ── Migration: add vehicle/driver columns to invoice (existing DBs) ──
+    existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(invoice)").fetchall()}
+    for col, definition in [
+        ("vehicle_id", "INTEGER"),
+        ("vehicle_no", "TEXT DEFAULT ''"),
+        ("driver_name", "TEXT DEFAULT ''"),
+    ]:
+        if col not in existing_cols:
+            conn.execute(f"ALTER TABLE invoice ADD COLUMN {col} {definition}")
     conn.commit()
 
 
