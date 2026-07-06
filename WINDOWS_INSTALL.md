@@ -9,12 +9,12 @@
 ### 2. Copy the project
 Copy the `billing/` folder to your Windows PC — e.g.:
 ```
-C:\KalQuarry\billing\
+C:\Kal Quarry\billing\
 ```
 
 ### 3. Open Command Prompt
 ```cmd
-cd C:\KalQuarry\billing
+cd C:\Kal Quarry\billing
 ```
 
 ### 4. Setup virtual environment & install
@@ -44,7 +44,7 @@ pyinstaller --onefile --windowed --name "KalQuarry" main.py
 
 ### 3. The .exe is at:
 ```
-C:\KalQuarry\billing\dist\KalQuarry.exe
+C:\Kal Quarry\billing\dist\KalQuarry.exe
 ```
 You can copy this single file to any Windows PC and run it directly.
 
@@ -52,11 +52,11 @@ You can copy this single file to any Windows PC and run it directly.
 
 ## Option C: One-click launcher (`.bat` file)
 
-Save this as `run.bat` inside `C:\KalQuarry\`:
+Save this as `run.bat` inside `C:\Kal Quarry\`:
 
 ```batch
 @echo off
-cd /d "C:\KalQuarry\billing"
+cd /d "C:\Kal Quarry\billing"
 call venv\Scripts\activate
 python main.py
 pause
