@@ -125,6 +125,20 @@ def cancel_invoice(invoice_id: int):
     conn.commit()
 
 
+def update_invoice_meta(invoice_id: int, customer_name: str = "", customer_mobile: str = "",
+                         customer_gstin: str = "", vehicle_no: str = "", driver_name: str = "",
+                         notes: str = ""):
+    """Edit text fields of an existing invoice (for typo fixes)."""
+    conn = get_connection()
+    conn.execute(
+        """UPDATE invoice SET customer_name=?, customer_mobile=?, customer_gstin=?,
+           vehicle_no=?, driver_name=?, notes=? WHERE id=?""",
+        (customer_name, customer_mobile, customer_gstin,
+         vehicle_no, driver_name, notes, invoice_id),
+    )
+    conn.commit()
+
+
 def delete_invoice(invoice_id: int):
     """Permanently delete invoice and all related records."""
     conn = get_connection()

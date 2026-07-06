@@ -18,7 +18,7 @@ from product import get_all_products
 from database import get_next_invoice_no
 from invoice import (
     create_invoice, search_invoices, get_invoice, get_invoice_items,
-    cancel_invoice, delete_invoice,
+    cancel_invoice, delete_invoice, update_invoice_meta,
 )
 from settings import get_company, get_db_setting
 from printer import generate_invoice_pdf, open_pdf
@@ -676,6 +676,12 @@ class InvoiceWindow(QWidget):
             view_btn.clicked.connect(lambda checked, iid=inv_id: self._view_invoice(iid))
             al.addWidget(view_btn)
 
+            edit_btn = QPushButton("Edit")
+            edit_btn.setFixedSize(50, 26)
+            edit_btn.setStyleSheet("background: #ff9800; color: white; border: none; border-radius: 3px;")
+            edit_btn.clicked.connect(lambda checked, iid=inv_id: self._edit_invoice(iid))
+            al.addWidget(edit_btn)
+
             if inv["status"] == "active":
                 cancel_btn = QPushButton("Cancel")
                 cancel_btn.setFixedSize(55, 26)
@@ -698,6 +704,60 @@ class InvoiceWindow(QWidget):
             open_pdf(path)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
+
+    def _edit_invoice(self, invoice_id: int):
+        inv = get_invoice(invoice_id)
+        if not inv:
+            return
+        from PySide6.QtWidgets import QDialog, QFormLayout, QDialogButtonBox
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Edit Invoice — {inv['invoice_no']}")
+        dialog.setMinimumWidth(450)
+
+        form = QFormLayout(dialog)
+        form.setSpacing(10)
+
+        name_edit = QLineEdit(inv.get("customer_name", ""))
+        name_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("Customer Name:", name_edit)
+
+        mobile_edit = QLineEdit(inv.get("customer_mobile", ""))
+        mobile_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("Mobile:", mobile_edit)
+
+        gstin_edit = QLineEdit(inv.get("customer_gstin", ""))
+        gstin_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("GSTIN:", gstin_edit)
+
+        vehicle_edit = QLineEdit(inv.get("vehicle_no", ""))
+        vehicle_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("Vehicle No:", vehicle_edit)
+
+        desig_edit = QLineEdit(inv.get("driver_name", ""))
+        desig_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("Designation:", desig_edit)
+
+        notes_edit = QLineEdit(inv.get("notes", ""))
+        notes_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        form.addRow("Notes:", notes_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+
+        if dialog.exec() == QDialog.Accepted:
+            update_invoice_meta(
+                invoice_id,
+                customer_name=name_edit.text().strip(),
+                customer_mobile=mobile_edit.text().strip(),
+                customer_gstin=gstin_edit.text().strip(),
+                vehicle_no=vehicle_edit.text().strip(),
+                driver_name=desig_edit.text().strip(),
+                notes=notes_edit.text().strip(),
+            )
+            self._search_invoices()
 
     def _cancel_invoice(self, invoice_id: int):
         ok = QMessageBox.question(
