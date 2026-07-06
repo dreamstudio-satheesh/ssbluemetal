@@ -18,7 +18,7 @@ from product import get_all_products
 from database import get_next_invoice_no
 from invoice import (
     create_invoice, search_invoices, get_invoice, get_invoice_items,
-    cancel_invoice,
+    cancel_invoice, delete_invoice,
 )
 from settings import get_company, get_db_setting
 from printer import generate_invoice_pdf, open_pdf
@@ -554,7 +554,7 @@ class InvoiceWindow(QWidget):
         self.list_search = QLineEdit()
         self.list_search.setPlaceholderText("Search by invoice no, customer name, or mobile...")
         self.list_search.setStyleSheet("padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px;")
-        self.list_search.textChanged.connect(self._search_invoices)
+        self.list_search.textChanged.connect(self._search_reset)
         search_layout.addWidget(self.list_search, 1)
 
         self.list_date_from = QDateEdit()
@@ -573,7 +573,7 @@ class InvoiceWindow(QWidget):
 
         refresh_btn = QPushButton("🔄")
         refresh_btn.setFixedWidth(36)
-        refresh_btn.clicked.connect(self._search_invoices)
+        refresh_btn.clicked.connect(self._search_refresh)
         search_layout.addWidget(refresh_btn)
 
         layout.addLayout(search_layout)
@@ -611,13 +611,51 @@ class InvoiceWindow(QWidget):
         header.resizeSection(6, 195)
         layout.addWidget(self.list_table)
 
+        # Pagination
+        page_layout = QHBoxLayout()
+        page_layout.addStretch()
+        self.prev_btn = QPushButton("◀  Previous")
+        self.prev_btn.setFixedWidth(100)
+        self.prev_btn.setStyleSheet("padding: 4px 10px; border: 1px solid #ccc; border-radius: 3px; background: white;")
+        self.prev_btn.clicked.connect(self._prev_page)
+        page_layout.addWidget(self.prev_btn)
+
+        self.page_label = QLabel("Page 1")
+        self.page_label.setStyleSheet("padding: 4px 12px; font-weight: bold;")
+        page_layout.addWidget(self.page_label)
+
+        self.next_btn = QPushButton("Next  ▶")
+        self.next_btn.setFixedWidth(100)
+        self.next_btn.setStyleSheet("padding: 4px 10px; border: 1px solid #ccc; border-radius: 3px; background: white;")
+        self.next_btn.clicked.connect(self._next_page)
+        page_layout.addWidget(self.next_btn)
+
+        page_layout.addStretch()
+        layout.addLayout(page_layout)
+
+        self._current_page = 1
+        self._total_pages = 1
+        self._search_invoices()
+
+    def _search_reset(self):
+        self._current_page = 1
+        self._search_invoices()
+
+    def _search_refresh(self):
+        self._current_page = 1
         self._search_invoices()
 
     def _search_invoices(self):
         query = self.list_search.text()
         date_from = self.list_date_from.date().toString("yyyy-MM-dd")
         date_to = self.list_date_to.date().toString("yyyy-MM-dd")
-        invoices = search_invoices(query, date_from, date_to)
+        invoices, total = search_invoices(query, date_from, date_to, page=self._current_page)
+
+        # Update pagination
+        self._total_pages = max(1, (total + 19) // 20)
+        self.page_label.setText(f"Page {self._current_page} / {self._total_pages}")
+        self.prev_btn.setEnabled(self._current_page > 1)
+        self.next_btn.setEnabled(self._current_page < self._total_pages)
 
         self.list_table.setRowCount(0)
         for inv in invoices:
@@ -662,6 +700,13 @@ class InvoiceWindow(QWidget):
                 cancel_btn.clicked.connect(lambda checked, iid=inv_id: self._cancel_invoice(iid))
                 al.addWidget(cancel_btn)
 
+            # Delete button for all invoices
+            del_btn = QPushButton("Del")
+            del_btn.setFixedSize(40, 26)
+            del_btn.setStyleSheet("background: #d32f2f; color: white; border: none; border-radius: 3px;")
+            del_btn.clicked.connect(lambda checked, iid=inv_id: self._delete_invoice(iid))
+            al.addWidget(del_btn)
+
             self.list_table.setCellWidget(row, 6, action_w)
 
     def _view_invoice(self, invoice_id: int):
@@ -678,6 +723,27 @@ class InvoiceWindow(QWidget):
         )
         if ok == QMessageBox.Yes:
             cancel_invoice(invoice_id)
+            self._search_invoices()
+
+    def _delete_invoice(self, invoice_id: int):
+        ok = QMessageBox.question(
+            self, "Confirm",
+            "Permanently delete this invoice and all related records?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if ok == QMessageBox.Yes:
+            delete_invoice(invoice_id)
+            self._current_page = 1
+            self._search_invoices()
+
+    def _prev_page(self):
+        if self._current_page > 1:
+            self._current_page -= 1
+            self._search_invoices()
+
+    def _next_page(self):
+        if self._current_page < self._total_pages:
+            self._current_page += 1
             self._search_invoices()
 
     def _create_dc_from_invoice(self, invoice_id: int):
@@ -705,4 +771,5 @@ class InvoiceWindow(QWidget):
             self._search_invoices()
 
     def refresh_list(self):
+        self._current_page = 1
         self._search_invoices()

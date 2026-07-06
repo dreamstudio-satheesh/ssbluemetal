@@ -80,29 +80,63 @@ def search_invoices(
     date_from: str = "",
     date_to: str = "",
     status: str = "active",
-) -> list[dict]:
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[dict], int]:
+    """Returns (invoices_list, total_count)."""
     conn = get_connection()
-    sql = "SELECT * FROM invoice WHERE status=? "
-    params: list = [status]
 
+    # Count
+    count_sql = "SELECT COUNT(*) FROM invoice WHERE status=? "
+    params: list = [status]
     if query:
-        sql += "AND (invoice_no LIKE ? OR customer_name LIKE ? OR customer_mobile LIKE ?) "
+        count_sql += "AND (invoice_no LIKE ? OR customer_name LIKE ? OR customer_mobile LIKE ?) "
         params.extend([f"%{query}%", f"%{query}%", f"%{query}%"])
     if date_from:
-        sql += "AND invoice_date >= ? "
+        count_sql += "AND invoice_date >= ? "
         params.append(date_from)
     if date_to:
-        sql += "AND invoice_date <= ? "
+        count_sql += "AND invoice_date <= ? "
         params.append(date_to)
+    total = conn.execute(count_sql, params).fetchone()[0]
 
-    sql += "ORDER BY id DESC"
-    rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
+    # Data
+    data_sql = "SELECT * FROM invoice WHERE status=? "
+    data_params: list = [status]
+    if query:
+        data_sql += "AND (invoice_no LIKE ? OR customer_name LIKE ? OR customer_mobile LIKE ?) "
+        data_params.extend([f"%{query}%", f"%{query}%", f"%{query}%"])
+    if date_from:
+        data_sql += "AND invoice_date >= ? "
+        data_params.append(date_from)
+    if date_to:
+        data_sql += "AND invoice_date <= ? "
+        data_params.append(date_to)
+
+    data_sql += "ORDER BY id DESC LIMIT ? OFFSET ?"
+    data_params.extend([page_size, (page - 1) * page_size])
+    rows = conn.execute(data_sql, data_params).fetchall()
+    return [dict(r) for r in rows], total
 
 
 def cancel_invoice(invoice_id: int):
     conn = get_connection()
     conn.execute("UPDATE invoice SET status='cancelled' WHERE id=?", (invoice_id,))
+    conn.commit()
+
+
+def delete_invoice(invoice_id: int):
+    """Permanently delete invoice and all related records."""
+    conn = get_connection()
+    inv = conn.execute("SELECT invoice_no FROM invoice WHERE id=?", (invoice_id,)).fetchone()
+    if not inv:
+        return
+    invoice_no = inv["invoice_no"]
+    # Delete related records
+    conn.execute("DELETE FROM receipt WHERE invoice_no=?", (invoice_no,))
+    conn.execute("DELETE FROM delivery_challan WHERE invoice_no=?", (invoice_no,))
+    conn.execute("DELETE FROM invoice_item WHERE invoice_id=?", (invoice_id,))
+    conn.execute("DELETE FROM invoice WHERE id=?", (invoice_id,))
     conn.commit()
 
 
