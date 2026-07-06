@@ -75,3 +75,29 @@ Double-click `run.bat` to launch.
 | `python -m venv venv` | Create virtual env |
 | `venv\Scripts\activate` | Activate virtual env |
 | `pip install -r requirements.txt` | Install dependencies |
+
+---
+
+## Troubleshooting
+
+### "No module named PySide6" error
+
+**Cause:** You skipped the virtual environment or didn't install dependencies.
+
+**Fix — run these 3 commands in order:**
+
+```cmd
+cd C:\KalQuarry\billing
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+Make sure you see `(venv)` at the start of the command prompt line after step 3. If you don't see `(venv)`, the virtual environment is not activated — run `venv\Scripts\activate` again.
+
+### "pip is not recognized"
+
+**Cause:** Python was not added to PATH during installation.
+
+**Fix:** Re-run the Python installer and ✅ check **"Add Python to PATH"**, then restart Command Prompt.
