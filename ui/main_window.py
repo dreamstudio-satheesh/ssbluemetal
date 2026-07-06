@@ -16,6 +16,7 @@ from ui.invoice_window import InvoiceWindow
 from ui.delivery_challan_window import DeliveryChallanWindow
 from ui.receipt_window import ReceiptWindow
 from ui.reports_window import ReportsWindow
+from ui.blank_invoice_window import BlankInvoiceWindow
 from settings import get_company, save_company, get_db_setting, set_db_setting
 
 
@@ -132,6 +133,7 @@ class MainWindow(QMainWindow):
             ("⚙️  Settings", 6),
             ("🚚  Delivery Challans", 7),
             ("🧾  Receipts", 8),
+            ("📄  Blank Invoice", 9),
         ]
         self._nav_group = []
         for text, idx in nav_items:
@@ -198,6 +200,9 @@ class MainWindow(QMainWindow):
         self.receipt_window = ReceiptWindow()
         self.stack.addWidget(self.receipt_window)           # 8
 
+        self.blank_invoice_window = BlankInvoiceWindow()
+        self.stack.addWidget(self.blank_invoice_window)     # 9
+
         content_layout.addWidget(self.stack)
         main_layout.addWidget(content_frame, 1)
 
@@ -224,6 +229,8 @@ class MainWindow(QMainWindow):
             self.delivery_challan_window.refresh_list()
         elif btn.page_index == 8:
             self.receipt_window.refresh_list()
+        elif btn.page_index == 9:
+            self.blank_invoice_window.refresh_for_new()
 
     # ── Dashboard ────────────────────────────────────────────────
 

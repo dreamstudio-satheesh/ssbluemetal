@@ -539,6 +539,257 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
 
 
 # ═══════════════════════════════════════════════════════════════════
+#  BLANK / HANDWRITTEN INVOICE PDF
+# ═══════════════════════════════════════════════════════════════════
+
+def generate_blank_invoice_pdf(
+    invoice_no: str = "",
+    invoice_date: str = "",
+    output_path: str | None = None,
+) -> str:
+    """Blank A4 invoice form for handwritten use — no customer, no items."""
+    company = get_company()
+
+    if output_path is None:
+        safe_no = invoice_no.replace("/", "_") if invoice_no else "blank"
+        output_path = os.path.join(
+            tempfile.gettempdir(),
+            f"blank_invoice_{safe_no}.pdf",
+        )
+
+    doc = SimpleDocTemplate(
+        output_path, pagesize=A4,
+        leftMargin=12*mm, rightMargin=12*mm,
+        topMargin=8*mm, bottomMargin=10*mm,
+    )
+    elements = []
+
+    # 1. LETTERHEAD
+    elements.append(_header_block(company))
+    elements.append(Spacer(1, 3*mm))
+
+    # 2. TITLE BAND
+    elements.append(_title_band("BLANK INVOICE  (Handwritten)"))
+    elements.append(Spacer(1, 4*mm))
+
+    # 3. TWO-COLUMN INFO: Invoice details (left) + Customer blanks (right)
+    left_rows = [
+        _info_pair("Invoice No",
+                   f"<b>{invoice_no}</b>  ____________________" if invoice_no
+                   else "____________________"),
+        _info_pair("Date",
+                   f"<b>{invoice_date}</b>  ____________________" if invoice_date
+                   else "____________________"),
+        _info_pair("Vehicle No", "____________________"),
+        _info_pair("Designation", "____________________"),
+    ]
+    left_tbl = Table(left_rows, colWidths=[32*mm, 56*mm])
+    left_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 1),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+    ]))
+    left_wrap = Table([[left_tbl]], colWidths=[88*mm])
+    left_wrap.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.4, BORDER),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+    ]))
+
+    # Customer box (blank)
+    blank_cust = ("Name: _____________________________<br/>"
+                  "Mobile: ___________________________<br/>"
+                  "GSTIN: ____________________________")
+    right_rows = [
+        [Paragraph("<b>Bill To</b>",
+                   ParagraphStyle("BL", fontName=FONT_NAME, fontSize=9, textColor=GREY)),
+         Paragraph(blank_cust,
+                   ParagraphStyle("BV", fontName=FONT_NAME, fontSize=9, textColor=BLACK, leading=16))],
+    ]
+    right_tbl = Table(right_rows, colWidths=[20*mm, 68*mm])
+    right_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 1),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
+    ]))
+    right_wrap = Table([[right_tbl]], colWidths=[88*mm])
+    right_wrap.setStyle(TableStyle([
+        ("BOX", (0, 0), (-1, -1), 0.4, BORDER),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+    ]))
+
+    info_table = Table([[left_wrap, right_wrap]], colWidths=[88*mm, 88*mm])
+    info_table.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 4*mm))
+
+    # 4. ITEMS TABLE — headers + 6 blank rows
+    hdr = ["#", "Description", "HSN/SAC", "Qty", "Unit", "Rate", "Amount"]
+    cw = [7*mm, 56*mm, 22*mm, 16*mm, 14*mm, 22*mm, 24*mm]
+
+    data = [hdr]
+    for i in range(1, 7):
+        data.append([str(i), "", "", "", "", "", ""])
+
+    # Totals section (blank)
+    data.append(["", "", "", "", "", "", ""])
+    data.append(["", "", "", "", "", "Subtotal", "__________"])
+    data.append(["", "", "", "", "", "CGST @ ___%", "__________"])
+    data.append(["", "", "", "", "", "SGST @ ___%", "__________"])
+    data.append(["", "", "", "", "", "Round Off", "__________"])
+    data.append(["", "", "", "", "", "Grand Total", "__________"])
+
+    tbl = Table(data, colWidths=cw, repeatRows=1)
+    style_cmds = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), WHITE),
+        ("FONTNAME", (0, 0), (-1, -1), FONT_NAME),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("FONTSIZE", (0, 1), (-1, -1), 8),
+        ("FONTSIZE", (0, -1), (-1, -1), 11),
+        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+        ("ALIGN", (0, 1), (0, -1), "CENTER"),
+        ("ALIGN", (3, 1), (-1, -1), "RIGHT"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 1), (-1, -7), 0.3, BORDER),       # grid for blank rows
+        ("LINEABOVE", (0, -6), (-1, -6), 0.6, NAVY),     # line before totals
+        ("LINEABOVE", (0, -1), (-1, -1), 1.0, NAVY),
+        ("BACKGROUND", (0, -1), (-1, -1), LIGHT_NAVY),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 3),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 3),
+    ]
+    # Left-align the total labels
+    for i in range(-6, 0):
+        style_cmds.append(("ALIGN", (5, i), (5, i), "LEFT"))
+    tbl.setStyle(TableStyle(style_cmds))
+    elements.append(tbl)
+    elements.append(Spacer(1, 4*mm))
+
+    # 5. AMOUNT IN WORDS (blank)
+    aw_tbl = Table(
+        [[Paragraph("<b>Amount in Words:</b>",
+                     ParagraphStyle("AWL", fontName=FONT_NAME, fontSize=9, textColor=NAVY)),
+          Paragraph("_______________________________________________________",
+                     ParagraphStyle("AWV", fontName=FONT_NAME, fontSize=9, textColor=NAVY, leading=13))]],
+        colWidths=[30*mm, 132*mm],
+    )
+    aw_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0, 0), (-1, -1), 0.4, BORDER),
+        ("BACKGROUND", (0, 0), (-1, -1), LIGHT_GREY),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(aw_tbl)
+    elements.append(Spacer(1, 1*mm))
+
+    # 6. BANK DETAILS
+    bank_parts = []
+    if company.get("bank_name"):
+        bank_parts.append(f"Bank: {company['bank_name']}")
+    if company.get("bank_account"):
+        bank_parts.append(f"A/C: {company['bank_account']}")
+    if company.get("bank_ifsc"):
+        bank_parts.append(f"IFSC: {company['bank_ifsc']}")
+    if bank_parts:
+        bank_text = "&nbsp;&nbsp;|&nbsp;&nbsp;".join(bank_parts)
+        bk_tbl = Table(
+            [[Paragraph("<b>Bank Details:</b>",
+                         ParagraphStyle("BKL", fontName=FONT_NAME, fontSize=9, textColor=GREY)),
+              Paragraph(bank_text,
+                         ParagraphStyle("BKV", fontName=FONT_NAME, fontSize=9, textColor=BLACK))]],
+            colWidths=[26*mm, 136*mm],
+        )
+        bk_tbl.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(bk_tbl)
+        elements.append(Spacer(1, 0.5*mm))
+
+    # 7. TERMS & CONDITIONS + SIGNATURE
+    cname = company.get("name", "S.S. BLUE METAL")
+    terms_text = get_db_setting("terms",
+        "1. All disputes subject to Coimbatore jurisdiction.\n"
+        "2. Payment due within 15 days from invoice date.\n"
+        "3. Interest @ 18% p.a. charged on overdue payments.\n"
+        "4. Goods once sold will not be taken back.")
+    terms_html = terms_text.replace("\n", "<br/>")
+
+    terms_tbl = Table(
+        [[Paragraph("<b>Terms &amp; Conditions</b>",
+                     ParagraphStyle("TL", fontName=FONT_NAME, fontSize=8, textColor=GREY)),
+          Paragraph(terms_html,
+                     ParagraphStyle("TV", fontName=FONT_NAME, fontSize=8, textColor=BLACK, leading=11))]],
+        colWidths=[28*mm, 66*mm],
+    )
+    terms_tbl.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("BOX", (0, 0), (-1, -1), 0.3, BORDER),
+        ("TOPPADDING", (0, 0), (-1, -1), 3),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ("BACKGROUND", (0, 0), (-1, 0), LIGHT_GREY),
+    ]))
+
+    sig_text = (
+        f"For <b>{cname}</b><br/><br/>"
+        f"_________________________<br/>"
+        f"Authorised Signatory"
+    )
+    sig_tbl = Table(
+        [[Paragraph(sig_text,
+                     ParagraphStyle("SV", fontName=FONT_NAME, fontSize=9,
+                                     alignment=TA_RIGHT, textColor=BLACK, leading=16))]],
+        colWidths=[80*mm],
+    )
+    sig_tbl.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+    ]))
+
+    bottom = Table([[terms_tbl, sig_tbl]], colWidths=[94*mm, 92*mm])
+    bottom.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "BOTTOM"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(bottom)
+    elements.append(Spacer(1, 3*mm))
+
+    # 8. FOOTER
+    elements.append(HRFlowable(width="100%", thickness=0.3, color=BORDER, spaceAfter=2*mm))
+    if company.get("footer_line1"):
+        elements.append(Paragraph(company["footer_line1"],
+                                   ParagraphStyle("F1", fontName=FONT_NAME, fontSize=7,
+                                                   alignment=TA_CENTER, textColor=GREY)))
+    if company.get("footer_line2"):
+        elements.append(Paragraph(company["footer_line2"],
+                                   ParagraphStyle("F2", fontName=FONT_NAME, fontSize=7,
+                                                   alignment=TA_CENTER, textColor=GREY)))
+    elements.append(Paragraph(
+        "This is a blank invoice form for handwritten use.",
+        ParagraphStyle("F3", fontName=FONT_NAME, fontSize=7, alignment=TA_CENTER, textColor=GREY),
+    ))
+
+    doc.build(elements)
+    return output_path
+
+
+# ═══════════════════════════════════════════════════════════════════
 #  DELIVERY CHALLAN PDF
 # ═══════════════════════════════════════════════════════════════════
 

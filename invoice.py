@@ -30,7 +30,7 @@ def create_invoice(
            cgst_amount, sgst_amount, igst_amount, round_off, grand_total,
            amount_in_words, notes, vehicle_id, vehicle_no, driver_name)
            VALUES (?, ?, ?, ?, ?, ?, 'intra', ?, ?,
-           ?, ?, 0, ?, ?, ?, ?, ?, ?)""",
+           ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)""",
         (
             invoice_no, customer_id, customer_name, customer_mobile,
             customer_gstin, invoice_date, subtotal, gst_rate,
