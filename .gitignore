@@ -1,0 +1,14 @@
+# Database
+db/billing.db
+db/billing.db-shm
+db/billing.db-wal
+
+# Virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# PyInstaller
+dist/
+build/
+*.spec
