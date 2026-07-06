@@ -105,12 +105,12 @@ class InvoiceWindow(QWidget):
         self.vehicle_combo.addItem("— Select Vehicle —", None)
         cust_layout.addWidget(self.vehicle_combo, 4, 1)
 
-        # Driver name
-        cust_layout.addWidget(QLabel("Driver:"), 5, 0)
-        self.driver_name = QLineEdit()
-        self.driver_name.setPlaceholderText("Driver name")
-        self.driver_name.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
-        cust_layout.addWidget(self.driver_name, 5, 1)
+        # Designation
+        cust_layout.addWidget(QLabel("Designation:"), 5, 0)
+        self.designation_edit = QLineEdit()
+        self.designation_edit.setPlaceholderText("e.g., Owner, Manager, Driver")
+        self.designation_edit.setStyleSheet("padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px;")
+        cust_layout.addWidget(self.designation_edit, 5, 1)
 
         layout.addWidget(cust_group)
         layout.addSpacing(8)
@@ -485,7 +485,7 @@ class InvoiceWindow(QWidget):
         veh_text = self.vehicle_combo.currentText() if veh_idx > 0 else ""
         # Extract just the vehicle no from combo text (remove type suffix)
         vehicle_no = veh_text.split("  (")[0] if veh_text else ""
-        driver = self.driver_name.text().strip()
+        designation = self.designation_edit.text().strip()
 
         inv_id = create_invoice(
             invoice_no=self.inv_no,
@@ -504,7 +504,7 @@ class InvoiceWindow(QWidget):
             notes="",
             vehicle_id=veh_id,
             vehicle_no=vehicle_no,
-            driver_name=driver,
+            driver_name=designation,
             items=items,
         )
 
@@ -531,7 +531,7 @@ class InvoiceWindow(QWidget):
         self._recalc_totals()
         self.vehicle_combo.clear()
         self.vehicle_combo.addItem("— Select Vehicle —", None)
-        self.driver_name.clear()
+        self.designation_edit.clear()
         if hasattr(self, '_saved_invoice_id'):
             del self._saved_invoice_id
 

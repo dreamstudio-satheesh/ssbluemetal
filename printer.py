@@ -298,7 +298,7 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     if inv.get("vehicle_no"):
         left_rows.append(_info_pair("Vehicle No", f"<b>{inv['vehicle_no']}</b>"))
     if inv.get("driver_name"):
-        left_rows.append(_info_pair("Driver", inv["driver_name"]))
+        left_rows.append(_info_pair("Designation", inv["driver_name"]))
     left_tbl = Table(left_rows, colWidths=[32*mm, 56*mm])
     left_tbl.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
