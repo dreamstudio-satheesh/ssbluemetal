@@ -3,7 +3,6 @@
 import os
 import platform
 import subprocess
-import tempfile
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -40,6 +39,7 @@ USABLE_WIDTH = A4[0] - 2*MARGIN_LR  # 186 mm
 HALF_WIDTH = USABLE_WIDTH / 2         # 93 mm (per column)
 
 ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+PDF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pdf_output")
 
 
 def _find_font() -> str:
@@ -261,9 +261,10 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     company = get_company()
 
     if output_path is None:
+        os.makedirs(PDF_DIR, exist_ok=True)
         safe_no = inv['invoice_no'].replace("/", "_")
         output_path = os.path.join(
-            tempfile.gettempdir(),
+            PDF_DIR,
             f"invoice_{safe_no}.pdf",
         )
 
@@ -549,9 +550,10 @@ def generate_blank_invoice_pdf(
     company = get_company()
 
     if output_path is None:
+        os.makedirs(PDF_DIR, exist_ok=True)
         safe_no = invoice_no.replace("/", "_") if invoice_no else "blank"
         output_path = os.path.join(
-            tempfile.gettempdir(),
+            PDF_DIR,
             f"blank_invoice_{safe_no}.pdf",
         )
 
@@ -801,8 +803,9 @@ def generate_delivery_challan_pdf(dc_id: int, output_path: str | None = None) ->
     company = get_company()
 
     if output_path is None:
+        os.makedirs(PDF_DIR, exist_ok=True)
         output_path = os.path.join(
-            tempfile.gettempdir(),
+            PDF_DIR,
             f"delivery_challan_{dc['dc_no'].replace('/', '_')}.pdf",
         )
 
@@ -1053,8 +1056,9 @@ def generate_receipt_pdf(receipt_id: int, output_path: str | None = None) -> str
     company = get_company()
 
     if output_path is None:
+        os.makedirs(PDF_DIR, exist_ok=True)
         output_path = os.path.join(
-            tempfile.gettempdir(),
+            PDF_DIR,
             f"receipt_{rec['receipt_no'].replace('/', '_')}.pdf",
         )
 

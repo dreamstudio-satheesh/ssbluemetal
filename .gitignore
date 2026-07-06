@@ -12,3 +12,6 @@ __pycache__/
 dist/
 build/
 *.spec
+
+# PDF output
+pdf_output/
