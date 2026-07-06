@@ -677,18 +677,6 @@ class InvoiceWindow(QWidget):
             al.addWidget(view_btn)
 
             if inv["status"] == "active":
-                dc_btn = QPushButton("DC")
-                dc_btn.setFixedSize(36, 26)
-                dc_btn.setStyleSheet("background: #4caf50; color: white; border: none; border-radius: 3px;")
-                dc_btn.clicked.connect(lambda checked, iid=inv_id: self._create_dc_from_invoice(iid))
-                al.addWidget(dc_btn)
-
-                rc_btn = QPushButton("RC")
-                rc_btn.setFixedSize(36, 26)
-                rc_btn.setStyleSheet("background: #ff9800; color: white; border: none; border-radius: 3px;")
-                rc_btn.clicked.connect(lambda checked, iid=inv_id: self._create_receipt_from_invoice(iid))
-                al.addWidget(rc_btn)
-
                 cancel_btn = QPushButton("Cancel")
                 cancel_btn.setFixedSize(55, 26)
                 cancel_btn.setStyleSheet("background: #f44336; color: white; border: none; border-radius: 3px;")
