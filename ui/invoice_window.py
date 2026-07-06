@@ -190,10 +190,9 @@ class InvoiceWindow(QWidget):
         self.subtotal_label.setFont(QFont("Segoe UI", 11))
         totals_layout.addRow("Subtotal:", self.subtotal_label)
 
-        self.gst_rate_combo = QComboBox()
-        self.gst_rate_combo.addItems(["GST 0%", "GST 5%", "GST 12%", "GST 18%"])
-        self.gst_rate_combo.currentIndexChanged.connect(self._recalc_totals)
-        totals_layout.addRow("GST Rate:", self.gst_rate_combo)
+        gst_label = QLabel("GST 5% (CGST 2.5% + SGST 2.5%)")
+        gst_label.setStyleSheet("color: #757575; font-size: 10px;")
+        totals_layout.addRow("GST:", gst_label)
 
         # GST breakdown
         self.cgst_label = QLabel("₹ 0.00")
@@ -385,15 +384,11 @@ class InvoiceWindow(QWidget):
             if amt_item:
                 subtotal += float(amt_item.text())
 
-        gst_text = self.gst_rate_combo.currentText()
-        gst_rate = float(gst_text.replace("GST ", "").replace("%", ""))
+        # Always 5% GST (CGST 2.5% + SGST 2.5%)
+        gst_rate = 5.0
         gst_amount = round(subtotal * gst_rate / 100, 2)
-
-        # Always CGST + SGST (Tamil Nadu - intra-state only)
-        half = round(gst_amount / 2, 2)
-        cgst = half
-        sgst = gst_amount - half
-
+        cgst = round(gst_amount / 2, 2)
+        sgst = gst_amount - cgst
         grand = subtotal + gst_amount
 
         self._subtotal = subtotal

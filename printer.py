@@ -368,7 +368,7 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
 
     # Totals section
     data.append(["", "", "", "", "", "", ""])  # spacer
-    gst_rate = inv.get("gst_rate", 0)
+    gst_rate = 5.0
     data.append(["", "", "", "", "", "Subtotal", f"{inv['subtotal']:.2f}"])
     if gst_rate > 0:
         hr = gst_rate / 2
