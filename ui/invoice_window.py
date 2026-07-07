@@ -86,13 +86,22 @@ class InvoiceWindow(QWidget):
 
         self.cust_combo = QComboBox()
         self.cust_combo.setMinimumWidth(300)
-        self.cust_combo.setStyleSheet("padding: 4px 8px;")
+        self.cust_combo.setStyleSheet("""
+            QComboBox { padding: 4px 8px; color: #333; }
+            QComboBox QAbstractItemView {
+                color: #333; background: white; selection-background-color: #3f51b5;
+                selection-color: white; outline: none;
+            }
+        """)
         self.cust_combo.currentIndexChanged.connect(self._on_customer_selected)
         cust_layout.addWidget(self.cust_combo, 1, 0)
 
         self.cust_name_label = QLabel("")
+        self.cust_name_label.setStyleSheet("color: #1a237e; font-size: 13px;")
         self.cust_mobile_label = QLabel("")
+        self.cust_mobile_label.setStyleSheet("color: #555;")
         self.cust_gstin_label = QLabel("")
+        self.cust_gstin_label.setStyleSheet("color: #555;")
         cust_layout.addWidget(self.cust_name_label, 2, 0)
         cust_layout.addWidget(self.cust_mobile_label, 2, 1)
         cust_layout.addWidget(self.cust_gstin_label, 3, 0)
@@ -101,7 +110,13 @@ class InvoiceWindow(QWidget):
         cust_layout.addWidget(QLabel("Vehicle:"), 4, 0)
         self.vehicle_combo = QComboBox()
         self.vehicle_combo.setMinimumWidth(250)
-        self.vehicle_combo.setStyleSheet("padding: 4px 8px;")
+        self.vehicle_combo.setStyleSheet("""
+            QComboBox { padding: 4px 8px; color: #333; }
+            QComboBox QAbstractItemView {
+                color: #333; background: white; selection-background-color: #3f51b5;
+                selection-color: white; outline: none;
+            }
+        """)
         self.vehicle_combo.addItem("— Select Vehicle —", None)
         cust_layout.addWidget(self.vehicle_combo, 4, 1)
 
@@ -315,12 +330,12 @@ class InvoiceWindow(QWidget):
             from customer import get_customer
             c = get_customer(cid) if cid else None
             if c:
-                self.cust_name_label.setText(f"<b>{c['name']}</b>")
-                self.cust_mobile_label.setText(f"📞 {c.get('mobile', '')}")
-                self.cust_gstin_label.setText(f"GST: {c.get('gstin', 'N/A')}")
+                self.cust_name_label.setText(f"<b style='color:#1a237e;'>{c['name']}</b>")
+                self.cust_mobile_label.setText(f"<span style='color:#555;'>📞 {c.get('mobile', '')}</span>")
+                self.cust_gstin_label.setText(f"<span style='color:#555;'>GST: {c.get('gstin', 'N/A')}</span>")
                 self._load_customer_vehicles(cid)
                 return
-        self.cust_name_label.setText("<i>No customer selected</i>")
+        self.cust_name_label.setText("<i style='color:#999;'>No customer selected</i>")
         self.cust_mobile_label.setText("")
         self.cust_gstin_label.setText("")
         self.vehicle_combo.clear()

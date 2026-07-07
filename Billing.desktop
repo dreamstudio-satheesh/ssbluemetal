@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Kal Quarry Billing
+Comment=Stone Quarry Billing Software
+Exec=/home/satheesh/WORK/SSBlueMetal/run.sh
+Path=/home/satheesh/WORK/SSBlueMetal
+Terminal=false
+Type=Application
+Categories=Office;Finance;
