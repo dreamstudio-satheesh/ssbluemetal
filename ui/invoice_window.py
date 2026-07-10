@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QTextEdit, QTabWidget, QSplitter, QAbstractItemView,
     QDialog,
 )
-from PySide6.QtCore import Qt, Signal, QEvent
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QDoubleValidator
 
 from customer import search_customers, get_all_customers, get_customer_vehicles
@@ -139,7 +139,13 @@ class InvoiceWindow(QWidget):
         add_row = QHBoxLayout()
         self.item_product = QComboBox()
         self.item_product.setMinimumWidth(250)
-        self.item_product.setStyleSheet("padding: 4px 8px;")
+        self.item_product.setStyleSheet("""
+            QComboBox { padding: 4px 8px; color: #333; }
+            QComboBox QAbstractItemView {
+                color: #333; background: white; selection-background-color: #3f51b5;
+                selection-color: white; outline: none;
+            }
+        """)
         add_row.addWidget(QLabel("Product:"))
         add_row.addWidget(self.item_product)
 
@@ -187,7 +193,10 @@ class InvoiceWindow(QWidget):
             QTableWidget { background: white; border: 1px solid #e0e0e0; }
             QHeaderView::section { background: #3f51b5; color: white; padding: 4px; font-weight: bold; }
             QTableWidget::item { padding: 4px; }
+            QTableWidget::item:selected { background: #3f51b5; color: white; }
         """)
+        self.items_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.items_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.items_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         items_layout.addWidget(self.items_table)
 
@@ -437,7 +446,7 @@ class InvoiceWindow(QWidget):
             if n >= 100:
                 res += units[n // 100] + " Hundred "
                 n %= 100
-            if 10 < n < 20:
+            if 10 <= n < 20:
                 res += teens[n - 10] + " "
             else:
                 if n >= 20:
@@ -497,26 +506,37 @@ class InvoiceWindow(QWidget):
         vehicle_no = veh_text.split("  (")[0] if veh_text else ""
         designation = self.designation_edit.text().strip()
 
-        inv_id = create_invoice(
-            invoice_no=self.inv_no,
-            customer_id=c["id"],
-            customer_name=c["name"],
-            customer_mobile=c.get("mobile", ""),
-            customer_gstin=c.get("gstin", ""),
-            invoice_date=self.date_edit.date().toString("yyyy-MM-dd"),
-            subtotal=self._subtotal,
-            gst_rate=self._gst_rate,
-            cgst_amount=self._cgst,
-            sgst_amount=self._sgst,
-            round_off=self._round_off,
-            grand_total=self._grand,
-            amount_in_words=self._amount_in_words(self._grand),
-            notes="",
-            vehicle_id=veh_id,
-            vehicle_no=vehicle_no,
-            driver_name=designation,
-            items=items,
-        )
+        try:
+            inv_id = create_invoice(
+                invoice_no=self.inv_no,
+                customer_id=c["id"],
+                customer_name=c["name"],
+                customer_mobile=c.get("mobile", ""),
+                customer_gstin=c.get("gstin", ""),
+                invoice_date=self.date_edit.date().toString("yyyy-MM-dd"),
+                subtotal=self._subtotal,
+                gst_rate=self._gst_rate,
+                cgst_amount=self._cgst,
+                sgst_amount=self._sgst,
+                round_off=self._round_off,
+                grand_total=self._grand,
+                amount_in_words=self._amount_in_words(self._grand),
+                notes="",
+                vehicle_id=veh_id,
+                vehicle_no=vehicle_no,
+                driver_name=designation,
+                items=items,
+            )
+        except Exception as e:
+            import traceback
+            tb = traceback.format_exc()
+            QMessageBox.critical(
+                self, "Save Failed",
+                f"Invoice could not be saved.\n\nError: {e}\n\n"
+                f"Location:\n{tb}\n"
+                f"Check that the 'db' folder is writable and not locked."
+            )
+            return
 
         self._saved_invoice_id = inv_id
         self.print_btn.setEnabled(True)
