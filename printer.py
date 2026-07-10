@@ -23,7 +23,7 @@ from database import get_connection
 
 
 def _fmt_vehicle(no: str) -> str:
-    """Format TN428999 → TN 42 8999 (auto-space if not given)."""
+    """Format vehicle no: remove spaces, uppercase, group as 2 chars + 2 chars + rest."""
     raw = no.strip().replace(" ", "").upper()
     if len(raw) >= 4:
         return f"{raw[:2]} {raw[2:4]} {raw[4:]}".strip()
