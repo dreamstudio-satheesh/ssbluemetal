@@ -294,10 +294,7 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     left_rows = [
         _info_pair("Invoice No", f"<b>{inv['invoice_no']}</b>"),
         _info_pair("Date", f"<b>{inv['invoice_date']}</b>"),
-        _info_pair("Place of Supply", f"<b>{inv.get('driver_name') or 'Tamil Nadu'}</b>"),
     ]
-    if inv.get("vehicle_no"):
-        left_rows.append(_info_pair("Vehicle No", f"<b>{inv['vehicle_no']}</b>"))
     left_tbl = Table(left_rows, colWidths=[32*mm, 56*mm])
     left_tbl.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
@@ -313,16 +310,20 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
         ("LEFTPADDING", (0, 0), (-1, -1), 4),
     ]))
 
-    # Customer box
+    # Customer / Delivery box
     cust_lines = [f"<b>{inv['customer_name']}</b>"]
     if inv.get("customer_mobile"):
         cust_lines.append(f"Mobile: {inv['customer_mobile']}")
     if inv.get("customer_gstin"):
         cust_lines.append(f"GSTIN: {inv['customer_gstin']}")
+    if inv.get("vehicle_no"):
+        cust_lines.append(f"Vehicle: <b>{inv['vehicle_no']}</b>")
+    if inv.get("driver_name"):
+        cust_lines.append(f"Designation: {inv['driver_name']}")
     cust_text = "<br/>".join(cust_lines)
 
     right_rows = [
-        [Paragraph("<b>Bill To</b>",
+        [Paragraph("<b>Delivery To</b>",
                    ParagraphStyle("BL", fontName=FONT_NAME, fontSize=9, textColor=GREY)),
          Paragraph(cust_text,
                    ParagraphStyle("BV", fontName=FONT_NAME, fontSize=9, textColor=BLACK))],
