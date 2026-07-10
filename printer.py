@@ -294,7 +294,6 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
     left_rows = [
         _info_pair("Invoice No", f"<b>{inv['invoice_no']}</b>"),
         _info_pair("Date", f"<b>{inv['invoice_date']}</b>"),
-        _info_pair("Place of Supply", f"<b>{inv.get('driver_name') or 'Tamil Nadu'}</b>"),
     ]
     if inv.get("vehicle_no"):
         left_rows.append(_info_pair("Vehicle No", f"<b>{inv['vehicle_no']}</b>"))
@@ -319,8 +318,6 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
         cust_lines.append(f"Mobile: {inv['customer_mobile']}")
     if inv.get("customer_gstin"):
         cust_lines.append(f"GSTIN: {inv['customer_gstin']}")
-    if inv.get("vehicle_no"):
-        cust_lines.append(f"Vehicle: <b>{inv['vehicle_no']}</b>")
     if inv.get("driver_name"):
         cust_lines.append(f"Designation: {inv['driver_name']}")
     cust_text = "<br/>".join(cust_lines)
