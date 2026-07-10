@@ -22,6 +22,14 @@ from receipt import get_receipt
 from database import get_connection
 
 
+def _fmt_vehicle(no: str) -> str:
+    """Format TN428999 → TN 42 8999 (auto-space if not given)."""
+    raw = no.strip().replace(" ", "").upper()
+    if len(raw) >= 4:
+        return f"{raw[:2]} {raw[2:4]} {raw[4:]}".strip()
+    return raw
+
+
 # ── Colour palette ──
 NAVY = colors.HexColor("#1a237e")
 LIGHT_NAVY = colors.HexColor("#e8eaf6")
@@ -296,7 +304,7 @@ def generate_invoice_pdf(invoice_id: int, output_path: str | None = None) -> str
         _info_pair("Date", f"<b>{inv['invoice_date']}</b>"),
     ]
     if inv.get("vehicle_no"):
-        left_rows.append(_info_pair("Vehicle No", f"<b>{inv['vehicle_no']}</b>"))
+        left_rows.append(_info_pair("Vehicle No", f"<b>{_fmt_vehicle(inv['vehicle_no'])}</b>"))
     left_tbl = Table(left_rows, colWidths=[32*mm, 56*mm])
     left_tbl.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "TOP"),
