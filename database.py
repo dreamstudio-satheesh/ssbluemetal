@@ -3,32 +3,38 @@
 import sqlite3
 import shutil
 import os
+import threading
 from datetime import datetime
 from typing import Any
 
-DB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "db")
+DB_DIR = os.environ.get("BILLING_DB_DIR") or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "db"
+)
 DB_PATH = os.path.join(DB_DIR, "billing.db")
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backup")
 
-_conn: sqlite3.Connection | None = None
+_local = threading.local()
 
 
 def get_connection() -> sqlite3.Connection:
-    global _conn
-    if _conn is None:
+    """One connection per thread — safe for both the desktop app and the web app."""
+    conn = getattr(_local, "conn", None)
+    if conn is None:
         os.makedirs(DB_DIR, exist_ok=True)
-        _conn = sqlite3.connect(DB_PATH)
-        _conn.row_factory = sqlite3.Row
-        _conn.execute("PRAGMA journal_mode=WAL")
-        _conn.execute("PRAGMA foreign_keys=ON")
-    return _conn
+        conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        conn.execute("PRAGMA foreign_keys=ON")
+        _local.conn = conn
+    return conn
 
 
 def close():
-    global _conn
-    if _conn:
-        _conn.close()
-        _conn = None
+    conn = getattr(_local, "conn", None)
+    if conn:
+        conn.close()
+        del _local.conn
 
 
 def init_db():

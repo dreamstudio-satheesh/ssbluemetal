@@ -1,0 +1,30 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: webapp/Dockerfile
+    image: ssbluemetal-api:latest
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      BILLING_DB_DIR: /app/db
+      PDF_OUTPUT_DIR: /app/pdf_output
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      # Windows/Docker Desktop: a bind-mounted SQLite file over WSL2 is slow and can
+      # hit locking errors. On a Windows production box run webapi.bat natively instead.
+      - ../db:/app/db
+      - ../pdf_output:/app/pdf_output
+      - ../backup:/app/backup
+    restart: unless-stopped
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    network_mode: "service:api"
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN:-}
+    depends_on:
+      - api
+    restart: unless-stopped

@@ -15,3 +15,9 @@ build/
 
 # PDF output
 pdf_output/
+
+# Web API venv
+.venv/
+
+# Secrets
+.env
