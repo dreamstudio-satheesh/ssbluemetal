@@ -92,9 +92,10 @@ Install a desktop shortcut:
 
 ## Getting started (Windows)
 
-See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md). Short version:
+Install to `C:\software\KalQuarry`. See [WINDOWS_INSTALL.md](WINDOWS_INSTALL.md). Short version:
 
 ```cmd
+cd C:\software\KalQuarry
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt

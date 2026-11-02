@@ -17,7 +17,7 @@ manual run, use `webapi.bat` instead (see [README.md](README.md#windows-recommen
 | Logon | Dedicated account or Local System — no interactive login |
 | Listener | `127.0.0.1:8000` by default (never exposed directly) |
 | Restart | On crash, with throttle |
-| Logs | `C:\KalQuarry\billing\logs\api.log`, `api-error.log` (rotated) |
+| Logs | `C:\software\KalQuarry\logs\api.log`, `api-error.log` (rotated) |
 
 The service runs `webapi.bat`, so `webapp\.env` stays the single source of truth for
 `WEBAPP_SECRET` and the other settings. The Python code does **not** read `.env` by
@@ -41,13 +41,13 @@ alternative is in [§10](#10-alternative-winsw).
 ## 3. Prerequisites
 
 1. **Python 3.12+** with *Add Python to PATH* enabled.
-2. Project copied to a **local** folder outside OneDrive, e.g. `C:\KalQuarry\billing`
+2. Project copied to a **local** folder outside OneDrive, e.g. `C:\software\KalQuarry`
    (SQLite in a synced folder causes `database is locked`).
 3. Writable folders exist: `db`, `pdf_output`, `backup`, `logs`.
 4. Venv and dependencies:
 
 ```cmd
-cd /d C:\KalQuarry\billing
+cd /d C:\software\KalQuarry
 py -3 -m venv .venv
 .venv\Scripts\python -m pip install -r webapp\requirements-web.txt
 ```
@@ -96,18 +96,18 @@ Point NSSM at `cmd.exe` running `webapi.bat` so the `.env` loader is used:
 set NSSM=C:\Tools\nssm\nssm.exe
 
 %NSSM% install SSBlueMetalAPI "C:\Windows\System32\cmd.exe"
-%NSSM% set SSBlueMetalAPI AppParameters "/c C:\KalQuarry\billing\webapi.bat"
-%NSSM% set SSBlueMetalAPI AppDirectory "C:\KalQuarry\billing"
+%NSSM% set SSBlueMetalAPI AppParameters "/c C:\software\KalQuarry\webapi.bat"
+%NSSM% set SSBlueMetalAPI AppDirectory "C:\software\KalQuarry"
 %NSSM% set SSBlueMetalAPI DisplayName "S.S. Blue Metal API"
 %NSSM% set SSBlueMetalAPI Description "JSON API for the S.S. Blue Metal mobile app (uvicorn, 127.0.0.1:8000)"
 %NSSM% set SSBlueMetalAPI Start SERVICE_AUTO_START
 ```
 
-`AppParameters` must be a single line: `/c C:\KalQuarry\billing\webapi.bat`. If the project
+`AppParameters` must be a single line: `/c C:\software\KalQuarry\webapi.bat`. If the project
 lives in a path with spaces, quote it:
 
 ```cmd
-%NSSM% set SSBlueMetalAPI AppParameters "/c \"C:\My Folder\KalQuarry\billing\webapi.bat\""
+%NSSM% set SSBlueMetalAPI AppParameters "/c \"C:\My Folder\KalQuarry\webapi.bat\""
 ```
 
 If the quoting is mangled, use `%NSSM% edit SSBlueMetalAPI` → **Application** tab and set
@@ -118,9 +118,9 @@ it in the GUI.
 Only if you prefer to start Python directly:
 
 ```cmd
-%NSSM% install SSBlueMetalAPI "C:\KalQuarry\billing\.venv\Scripts\python.exe"
+%NSSM% install SSBlueMetalAPI "C:\software\KalQuarry\.venv\Scripts\python.exe"
 %NSSM% set SSBlueMetalAPI AppParameters "-m uvicorn webapp.main:app --host 127.0.0.1 --port 8000"
-%NSSM% set SSBlueMetalAPI AppDirectory "C:\KalQuarry\billing"
+%NSSM% set SSBlueMetalAPI AppDirectory "C:\software\KalQuarry"
 ```
 
 Then you **must** add every value from `webapp\.env` to the process environment:
@@ -136,9 +136,9 @@ Then you **must** add every value from `webapp\.env` to the process environment:
 %NSSM% set SSBlueMetalAPI AppRestartDelay 5000
 %NSSM% set SSBlueMetalAPI AppThrottle 10000
 
-mkdir C:\KalQuarry\billing\logs
-%NSSM% set SSBlueMetalAPI AppStdout "C:\KalQuarry\billing\logs\api.log"
-%NSSM% set SSBlueMetalAPI AppStderr "C:\KalQuarry\billing\logs\api-error.log"
+mkdir C:\software\KalQuarry\logs
+%NSSM% set SSBlueMetalAPI AppStdout "C:\software\KalQuarry\logs\api.log"
+%NSSM% set SSBlueMetalAPI AppStderr "C:\software\KalQuarry\logs\api-error.log"
 %NSSM% set SSBlueMetalAPI AppRotateFiles 1
 %NSSM% set SSBlueMetalAPI AppRotateOnline 1
 %NSSM% set SSBlueMetalAPI AppRotateBytes 10485760
@@ -155,7 +155,7 @@ which lets SQLite finish its write-ahead-log checkpoint.
 ## 7. Run as a dedicated account
 
 By default the service runs as **Local System**. That works if the project is under
-`C:\KalQuarry\billing` (not under a user profile). For least privilege, create a local user
+`C:\software\KalQuarry` (not under a user profile). For least privilege, create a local user
 `svc-ssblue` with no interactive logon rights and grant it:
 
 - *Log on as a service* — `secpol.msc` → Local Policies → User Rights Assignment.
@@ -233,7 +233,7 @@ reachable without the tunnel.
 Same result, single `.exe` plus an XML file, no install step. Keep the `cmd.exe` wrapper
 so `webapp\.env` is still loaded.
 
-`C:\KalQuarry\billing\ssblue-api.xml`:
+`C:\software\KalQuarry\ssblue-api.xml`:
 
 ```xml
 <service>
@@ -241,10 +241,10 @@ so `webapp\.env` is still loaded.
   <name>S.S. Blue Metal API</name>
   <description>JSON API for the mobile app</description>
   <executable>C:\Windows\System32\cmd.exe</executable>
-  <arguments>/c C:\KalQuarry\billing\webapi.bat</arguments>
-  <workingdirectory>C:\KalQuarry\billing</workingdirectory>
+  <arguments>/c C:\software\KalQuarry\webapi.bat</arguments>
+  <workingdirectory>C:\software\KalQuarry</workingdirectory>
   <startmode>Automatic</startmode>
-  <logpath>C:\KalQuarry\billing\logs</logpath>
+  <logpath>C:\software\KalQuarry\logs</logpath>
   <log mode="roll-by-size">
     <sizeThreshold>10240</sizeThreshold>
     <keepFiles>8</keepFiles>
@@ -257,9 +257,9 @@ so `webapp\.env` is still loaded.
 Copy `WinSW-x64.exe` next to it as `ssblue-api.exe`, then from an elevated prompt:
 
 ```cmd
-C:\KalQuarry\billing\ssblue-api.exe install
-C:\KalQuarry\billing\ssblue-api.exe start
-C:\KalQuarry\billing\ssblue-api.exe status
+C:\software\KalQuarry\ssblue-api.exe install
+C:\software\KalQuarry\ssblue-api.exe start
+C:\software\KalQuarry\ssblue-api.exe status
 ```
 
 Uninstall with `ssblue-api.exe uninstall`.
@@ -275,7 +275,7 @@ Uninstall with `ssblue-api.exe uninstall`.
 | Stop | `%NSSM% stop SSBlueMetalAPI` |
 | Restart after `.env` change | `%NSSM% restart SSBlueMetalAPI` |
 | Edit config | `%NSSM% edit SSBlueMetalAPI` |
-| Tail log | `powershell Get-Content C:\KalQuarry\billing\logs\api.log -Wait -Tail 50` |
+| Tail log | `powershell Get-Content C:\software\KalQuarry\logs\api.log -Wait -Tail 50` |
 | Event log | `eventvwr.msc` → Windows Logs → Application |
 
 `webapp\.env` changes need a restart: the batch file reads it only at process start.
@@ -297,7 +297,7 @@ Data in `db`, `pdf_output` and `backup` is untouched.
 |---|---|
 | Error 1053 on start | `binPath` points at Python/`.bat` directly — install through NSSM/WinSW |
 | Service starts then stops | Run `webapi.bat` in a console as the same account; error is in `logs\api-error.log` |
-| `Missing .venv` in log | Venv not created, or service account cannot see `C:\KalQuarry\billing\.venv` |
+| `Missing .venv` in log | Venv not created, or service account cannot see `C:\software\KalQuarry\.venv` |
 | `WEBAPP_SECRET not set — tokens break on restart` | `.env` not loaded (direct-python variant) or `.env` has no `WEBAPP_SECRET` |
 | `[Errno 10048]` address in use | Old console `webapi.bat` still running; `netstat -ano \| findstr :8000` |
 | `database is locked` | DB on OneDrive/network share, antivirus lock, or desktop app writing during backup |

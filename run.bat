@@ -1,4 +1,4 @@
 @echo off
-cd /d "%~dp0"
+cd /d "C:\software\KalQuarry"
 call venv\Scripts\activate
 start "" pythonw main.py

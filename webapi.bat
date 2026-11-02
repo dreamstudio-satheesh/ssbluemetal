@@ -1,6 +1,6 @@
 @echo off
 setlocal
-cd /d "%~dp0"
+cd /d "C:\software\KalQuarry"
 
 if exist webapp\.env (
   for /f "usebackq tokens=1,* delims==" %%A in ("webapp\.env") do (

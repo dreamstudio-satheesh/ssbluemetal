@@ -7,14 +7,14 @@
 - ✅ Check **"Add Python to PATH"** during installation
 
 ### 2. Copy the project
-Copy the `billing/` folder to your Windows PC — e.g.:
+Copy the project folder to your Windows PC as:
 ```
-C:\KalQuarry\billing\
+C:\software\KalQuarry\
 ```
 
 ### 3. Open Command Prompt
 ```cmd
-cd C:\KalQuarry\billing
+cd C:\software\KalQuarry
 ```
 
 ### 4. Setup virtual environment & install
@@ -44,7 +44,7 @@ pyinstaller --onefile --windowed --name "KalQuarry" main.py
 
 ### 3. The .exe is at:
 ```
-C:\KalQuarry\billing\dist\KalQuarry.exe
+C:\software\KalQuarry\dist\KalQuarry.exe
 ```
 You can copy this single file to any Windows PC and run it directly.
 
@@ -52,11 +52,11 @@ You can copy this single file to any Windows PC and run it directly.
 
 ## Option C: One-click launcher (`.bat` file)
 
-Save this as `run.bat` inside `C:\KalQuarry\`:
+Save this as `run.bat` inside `C:\software\KalQuarry\`:
 
 ```batch
 @echo off
-cd /d "C:\KalQuarry\billing"
+cd /d "C:\software\KalQuarry"
 call venv\Scripts\activate
 python main.py
 pause
@@ -70,7 +70,7 @@ Double-click `run.bat` to launch.
 
 Runs the mobile API (`webapp.main:app`) in the background: starts **before anyone logs
 in**, survives reboot, restarts after a crash. Needs an Administrator prompt once, at
-install time only. The desktop app and the API share `C:\KalQuarry\billing\db\billing.db`.
+install time only. The desktop app and the API share `C:\software\KalQuarry\db\billing.db`.
 
 Full walkthrough, service accounts, logging and troubleshooting:
 **[webapp/WINDOWS_SERVICE.md](webapp/WINDOWS_SERVICE.md)**.
@@ -78,7 +78,7 @@ Full walkthrough, service accounts, logging and troubleshooting:
 ### 1. Prepare the API
 
 ```cmd
-cd /d C:\KalQuarry\billing
+cd /d C:\software\KalQuarry
 py -3 -m venv .venv
 .venv\Scripts\python -m pip install -r webapp\requirements-web.txt
 copy webapp\.env.example webapp\.env
@@ -103,15 +103,15 @@ Download <https://nssm.cc/download> and extract `win64\nssm.exe` to
 ```cmd
 set NSSM=C:\Tools\nssm\nssm.exe
 %NSSM% install SSBlueMetalAPI "C:\Windows\System32\cmd.exe"
-%NSSM% set SSBlueMetalAPI AppParameters "/c C:\KalQuarry\billing\webapi.bat"
-%NSSM% set SSBlueMetalAPI AppDirectory "C:\KalQuarry\billing"
+%NSSM% set SSBlueMetalAPI AppParameters "/c C:\software\KalQuarry\webapi.bat"
+%NSSM% set SSBlueMetalAPI AppDirectory "C:\software\KalQuarry"
 %NSSM% set SSBlueMetalAPI DisplayName "S.S. Blue Metal API"
 %NSSM% set SSBlueMetalAPI Start SERVICE_AUTO_START
 %NSSM% set SSBlueMetalAPI AppExit Default Restart
 %NSSM% set SSBlueMetalAPI AppRestartDelay 5000
-mkdir C:\KalQuarry\billing\logs
-%NSSM% set SSBlueMetalAPI AppStdout "C:\KalQuarry\billing\logs\api.log"
-%NSSM% set SSBlueMetalAPI AppStderr "C:\KalQuarry\billing\logs\api-error.log"
+mkdir C:\software\KalQuarry\logs
+%NSSM% set SSBlueMetalAPI AppStdout "C:\software\KalQuarry\logs\api.log"
+%NSSM% set SSBlueMetalAPI AppStderr "C:\software\KalQuarry\logs\api-error.log"
 %NSSM% start SSBlueMetalAPI
 ```
 
@@ -149,7 +149,7 @@ The API stays bound to `127.0.0.1` — only `cloudflared` is exposed. Details:
 | Status | `sc query SSBlueMetalAPI` |
 | Start / stop / restart | `%NSSM% start SSBlueMetalAPI` / `stop` / `restart` |
 | Edit config | `%NSSM% edit SSBlueMetalAPI` |
-| Logs | `C:\KalQuarry\billing\logs\api.log`, `api-error.log` |
+| Logs | `C:\software\KalQuarry\logs\api.log`, `api-error.log` |
 | Uninstall | `%NSSM% stop SSBlueMetalAPI` then `%NSSM% remove SSBlueMetalAPI confirm` |
 
 ---
@@ -178,7 +178,7 @@ The API stays bound to `127.0.0.1` — only `cloudflared` is exposed. Details:
 **Fix — run these 3 commands in order:**
 
 ```cmd
-cd C:\KalQuarry\billing
+cd C:\software\KalQuarry
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
